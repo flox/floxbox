@@ -28,23 +28,38 @@ var initImageCmd = &cobra.Command{
 	which in turn can be used by the snapshot-image command.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		distro, _ := cmd.Flags().GetString("distro")
+		memory, _ := cmd.Flags().GetString("memory")
+		cores, _ := cmd.Flags().GetString("cores")
+		hdsize, _ := cmd.Flags().GetString("hd-size")
 		if distro == "ubuntu-focal" {
-			ubuntuFocalInit()
+			ubuntuFocalInit(memory, cores, hdsize)
 		} else {
 			fmt.Println(distro, " distro is not supported")
 		}
 	},
 }
 
-func ubuntuFocalInit() {
+func ubuntuFocalInit(memory string, cores string, hdsize string) {
 	ubuntuFocalIsoInit()
-	ubuntuFocalImgCreateAndInstall()
+	ubuntuFocalImgCreateAndInstall(memory, cores, hdsize)
+}
+
+func ubuntuIsoDirStr() string {
+	//var isodirstr string
+	isocfgdir := viper.Get("ubuntu-iso-dir")
+	isodirstr := fmt.Sprintf("%v", isocfgdir)
+	return isodirstr
+}
+
+func ubuntuImgDirStr() string {
+	imgcfgdir := viper.Get("ubuntu-images-dir")
+	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
+	return imgdirstr
 }
 
 func ubuntuFocalIsoInit() {
 	home, _ := os.UserHomeDir()
-	isocfgdir := viper.Get("ubuntu-iso-dir")
-	dirstr := fmt.Sprintf("%v", isocfgdir)
+	dirstr := ubuntuIsoDirStr()
 	isodir := home + "/" + dirstr
 	if _, err := os.Stat(isodir); os.IsNotExist(err) {
 		err := os.MkdirAll(isodir, 0750)
@@ -67,7 +82,6 @@ func ubuntuFocalIsoInit() {
 	} else {
 		fmt.Println(isopath, " already exists, moving on")
 	}
-	fmt.Println("Next run itest snapshot-qcow2. See itest snapshot-qcow2 --help for additional info ...")
 }
 
 func isoDownload(filepath string, url string) error {
@@ -88,15 +102,15 @@ func isoDownload(filepath string, url string) error {
 	return err
 }
 
-func ubuntuFocalImgCreateAndInstall() {
+func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string) {
 	home, _ := os.UserHomeDir()
 	t := time.Now()
 	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 
-	imgcfgdir := viper.Get("ubuntu-images-dir")
-	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
+	imgdirstr := ubuntuImgDirStr()
+	isodir := ubuntuIsoDirStr()
 	imgdir := home + "/" + imgdirstr
 	if _, err := os.Stat(imgdir); os.IsNotExist(err) {
 		err := os.MkdirAll(imgdir, 0750)
@@ -109,18 +123,25 @@ func ubuntuFocalImgCreateAndInstall() {
 		fmt.Println(imgdir, " already exists, moving on")
 	}
 	id := uuid.New()
-	hdsize := viper.GetString("ubuntu-hd-size")
-	hdsizestr := fmt.Sprintf("%v", hdsize)
-	imgfullpath := imgdir + "/" + timeFormatted + id.String() + "-itest-base-ubuntu.img.qcow2"
+
+	imgfullpath := imgdir + "/" + timeFormatted + id.String() + "-itest-BASE-ubuntu.img.qcow2"
+	isofullpath := home + "/" + isodir + "/" + "itest-ubuntu.iso"
+	//TODO programmatically recognize iso name or create command flag
 	fmt.Println("*** Creating Ubuntu Focal qcow2 with .itest.yaml ubuntu-hd-size setting ***")
-	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsizestr)
+	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsize)
 	err := imgcreatecmd.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(imgfullpath, " successfully created ....")
-	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now ... ***")
+	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run itest init-img again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: itest password: itest enter poweroff to complete this step. Now, you can run test images-list --distro=ubuntu-focal, and then run itest snapshot-image --distro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
 
+	imginstallcmd := exec.Command("qemu-system-x86_64", "-cdrom", isofullpath, "-drive", "file="+imgfullpath+",format=qcow2", "-enable-kvm", "-m", memory, "-smp", cores)
+	fmt.Println("Installing with ", imginstallcmd)
+	installerr := imginstallcmd.Run()
+	if installerr != nil {
+		log.Fatal(installerr)
+	}
 }
 
 func init() {
@@ -135,4 +156,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	initImageCmd.Flags().String("distro", "ubuntu-focal", "Desired distro to init. Currently supported distros include: ubuntu-focal")
+	initImageCmd.Flags().String("memory", "10G", "The amount of memory you want to assign to the machine you are creating")
+	initImageCmd.Flags().String("cores", "2", "The number of host machine cores you want to dedicate to this machine")
+	initImageCmd.Flags().String("hd-size", "20G", "The size of the hard drive for virtual machine")
 }
