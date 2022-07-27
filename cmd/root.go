@@ -48,6 +48,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -67,5 +68,15 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	} else {
+		//ubuntu-images-dir: .itest/ubuntu-images
+		//ubuntu-iso-dir: .itest/ubuntu-iso
+
+		viper.Set("ubuntu-images-dir", ".itest/ubuntu-images")
+		viper.Set("ubuntu-iso-dir", ".itest/ubuntu-iso")
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+		cnfpath := home + "/" + ".itest.yaml"
+		viper.SafeWriteConfigAs(cnfpath)
 	}
 }
