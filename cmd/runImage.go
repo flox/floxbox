@@ -51,6 +51,7 @@ func runImage(image string) {
 		}
 	} else {
 		runcmd := exec.Command("qemu-system-x86_64", "-drive", "file="+fullpath+",format=qcow2", "-cpu", "host", "-enable-kvm", "-m", "10G", "-smp", "2", "-net", "user,hostfwd=tcp::10022-:22", "-net", "nic", "-display", "none")
+		fmt.Println("*** Running " + image + " ***")
 		runerr := runcmd.Run()
 		if runerr != nil {
 			log.Fatal(runerr)

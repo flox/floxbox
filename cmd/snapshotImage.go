@@ -49,7 +49,7 @@ func ubuntuSnapshotImage(baseimagename string, snapshotname string) {
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 	basefullpath := home + "/" + imgdir + "/" + baseimagename
-	snapshotfullpath := home + "/" + imgdir + "/" + timeFormatted + "-itest-SNAPSHOT-ubuntu.img.qcow2" + snapshotname
+	snapshotfullpath := home + "/" + imgdir + "/" + timeFormatted + "itest-SNAPSHOT-ubuntu.img.qcow2-" + snapshotname
 	fmt.Println("*** Creating SNAPSHOT " + snapshotfullpath + " of " + baseimagename + " ***")
 	snapshotcreatecmd := exec.Command("qemu-img", "create", "-b", basefullpath, "-f", "qcow2", "-F", "qcow2", snapshotfullpath)
 	err := snapshotcreatecmd.Run()

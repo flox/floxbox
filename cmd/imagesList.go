@@ -56,5 +56,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// imagesListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	imagesListCmd.Flags().String("distro", "ubuntu-focal", "Desired distro type to list imges for. Currently supported distros include: ubuntu-focal")
+	imagesListCmd.Flags().String("distro", "ubuntu-focal", "Desired distro type to list images for. Currently supported distros include: ubuntu-focal")
 }
