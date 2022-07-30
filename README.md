@@ -1,6 +1,6 @@
 ## Bootstrapping sequence
 
-1. `nix profile install --refresh github:flox/itest`
+1. `nix profile install --refresh github:samrose/itest`
 2. run `itest init-img` (wait for install to complete, if installer crashes, re-run `itest init-img`)
 3. Wait until the installation is complete, hit `<enter>` and login with user: itest password: itest, then type `poweroff` and `<enter>` to complete the install process.
 4. run `itest images-list` and copy the BASE image you want to snapshot.
