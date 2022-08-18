@@ -26,8 +26,9 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		image, _ := cmd.Flags().GetString("image-name")
+		memory, _ := cmd.Flags().GetString("memory")
 		if image != "" {
-			runImage(image)
+			runImage(image, memory)
 		} else {
 			fmt.Println("you must supply an --image-name value")
 		}
@@ -40,7 +41,7 @@ func ubuntuRunImgDirStr() string {
 	return imgdirstr
 }
 
-func runImage(image string) {
+func runImage(image string, memory string) {
 	home, _ := os.UserHomeDir()
 	imgdirstr := ubuntuRunImgDirStr()
 	fullpath := home + "/" + imgdirstr + "/" + image
@@ -50,7 +51,7 @@ func runImage(image string) {
 			fmt.Println(fullpath, " image not found")
 		}
 	} else {
-		runcmd := exec.Command("qemu-system-x86_64", "-drive", "file="+fullpath+",format=qcow2", "-cpu", "host", "-enable-kvm", "-m", "10G", "-smp", "2", "-net", "user,hostfwd=tcp::10022-:22", "-net", "nic", "-display", "none")
+		runcmd := exec.Command("qemu-system-x86_64", "-drive", "file="+fullpath+",format=qcow2", "-cpu", "host", "-enable-kvm", "-m", memory, "-smp", "2", "-net", "user,hostfwd=tcp::10022-:22", "-net", "nic", "-display", "none")
 		fmt.Println("*** Running " + image + " ***")
 		runerr := runcmd.Run()
 		if runerr != nil {
@@ -72,4 +73,5 @@ func init() {
 	// is called directly, e.g.:
 	// runImageCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	runImageCmd.Flags().String("image-name", "", "Desired image to run. you must include the full name of the image as retrived from itest images-list")
+	runImageCmd.Flags().String("memory", "1G", "Sets guest startup RAM. Supports M for megabytes, or G for Gigabytes, ex. 12G")
 }

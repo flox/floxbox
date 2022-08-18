@@ -19,7 +19,7 @@ import (
 
 // initImageCmd represents the initImage command
 var initImageCmd = &cobra.Command{
-	Use:   "init-img",
+	Use:   "init-image",
 	Short: "Initialize qemu image from local or remote ISO image file",
 	Long: `
 	This command will search for an existing ISO image,
@@ -134,7 +134,7 @@ func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string) 
 		log.Fatal(err)
 	}
 	fmt.Println(imgfullpath, " successfully created ....")
-	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run itest init-img again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: itest password: itest enter poweroff to complete this step. Now, you can run test images-list --distro=ubuntu-focal, and then run itest snapshot-image --distro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
+	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run itest init-image again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: itest password: itest enter poweroff to complete this step. Now, you can run test images-list --distro=ubuntu-focal, and then run itest snapshot-image --distro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
 
 	imginstallcmd := exec.Command("qemu-system-x86_64", "-cdrom", isofullpath, "-drive", "file="+imgfullpath+",format=qcow2", "-enable-kvm", "-m", memory, "-smp", cores)
 	fmt.Println("Installing with ", imginstallcmd)
