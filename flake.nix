@@ -56,6 +56,14 @@
       # flake provides only one package or there is a clear "main"
       # package.
       defaultPackage = forAllSystems (system: self.packages.${system}.itest);
+      devShell = pkgs.mkShell {
+          buildInputs = [
+            pkgs.packer
+          ];
+          shellHook = ''
+            export HELLO="hello"
+          '';
+        };
       hydraJobs = forAllSystems (system: self.packages.${system}.itest);
     };
 }
