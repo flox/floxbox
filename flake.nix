@@ -33,7 +33,7 @@
         # In 'nix develop', we don't need a copy of the source tree
         # in the Nix store.
         src = ./.;
-        buildInputs = [pkgs.qemu pkgs.packer];
+        propagatedBuildInputs = [ pkgs.qemu pkgs.cloud-utils ]
         # This hash locks the dependencies of this package. It is
         # necessary because of how Go requires network access to resolve
         # VCS.  See https://www.tweag.io/blog/2021-03-04-gomod2nix/ for
@@ -42,9 +42,9 @@
         # it should be "out-of-band" with other tooling (eg. gomod2nix).
         # To begin with it is recommended to set this, but one must
         # remeber to bump this hash when your dependencies change.
-        vendorSha256 = null;
+        #vendorSha256 = pkgs.lib.fakeSha256;;
 
-        #vendorSha256 = "sha256-/n9+acNntoOpzNwWT2ow77SLzRJMGnwyiqzh2t/48gY=";
+        vendorSha256 = "sha256-/n9+acNntoOpzNwWT2ow77SLzRJMGnwyiqzh2t/48gY=";
       };
     });
 
@@ -57,7 +57,7 @@
     in
       pkgs.mkShell {
         buildInputs = [
-          pkgs.packer
+          pkgs.go
         ];
         shellHook = ''
           export HELLO="hello"
