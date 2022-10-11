@@ -1,4 +1,4 @@
-module github.com/flox/itest
+module github.com/flox/flox-qemu
 
 go 1.18
 
