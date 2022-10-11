@@ -1,3 +1,10 @@
+# Under construction
+
+`flox-qemu` is under construction.
+
+
+# Deprecated
+
 ## Currently only supported running on Linux host machines with nix installed. Currently only supports `ubuntu-focal` vm. More VM's to come!
 ## Bootstrapping sequence
 
