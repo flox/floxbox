@@ -33,24 +33,18 @@ var initImageCmd = &cobra.Command{
 		hdsize, _ := cmd.Flags().GetString("hd-size")
 		metadata, _ := cmd.Flags().GetString("metadata-file")
 		userdata, _ := cmd.Flags().GetString("user-data-file")
+		ubuntu_img_url, _ := cmd.Flags().GetString("ubuntu-img-url")
 		if distro == "ubuntu-focal" {
-			ubuntuFocalInit(memory, cores, hdsize, metadata, userdata)
+			ubuntuFocalInit(memory, cores, hdsize, metadata, userdata, ubuntu_img_url)
 		} else {
 			fmt.Println(distro, " distro is not supported")
 		}
 	},
 }
 
-func ubuntuFocalInit(memory string, cores string, hdsize string, metadata string, userdata string) {
+func ubuntuFocalInit(memory string, cores string, hdsize string, metadata string, userdata string, ubuntu_img_url string) {
 	//ubuntuFocalIsoInit()
-	ubuntuFocalImgCreateAndInstall(memory, cores, hdsize, metadata, userdata)
-}
-
-func ubuntuIsoDirStr() string {
-	//var isodirstr string
-	isocfgdir := viper.Get("ubuntu-iso-dir")
-	isodirstr := fmt.Sprintf("%v", isocfgdir)
-	return isodirstr
+	ubuntuFocalImgCreateAndInstall(memory, cores, hdsize, metadata, userdata, ubuntu_img_url)
 }
 
 func ubuntuImgDirStr() string {
@@ -59,34 +53,7 @@ func ubuntuImgDirStr() string {
 	return imgdirstr
 }
 
-func ubuntuFocalIsoInit() {
-	home, _ := os.UserHomeDir()
-	dirstr := ubuntuIsoDirStr()
-	isodir := home + "/" + dirstr
-	if _, err := os.Stat(isodir); os.IsNotExist(err) {
-		err := os.MkdirAll(isodir, 0750)
-		if err != nil && !os.IsExist(err) {
-			log.Print(err)
-		} else {
-			fmt.Println("Created ", isodir)
-		}
-	} else {
-		fmt.Println(isodir, " already exists, moving on")
-	}
-	isopath := isodir + "/" + "flox-qemu-ubuntu.iso"
-	fileUrl := "https://flox-qemuiso.s3.amazonaws.com/flox-qemu-ubuntu.iso"
-	if _, err := os.Stat(isopath); os.IsNotExist(err) {
-		err := isoDownload(isopath, fileUrl)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Downloaded: " + fileUrl)
-	} else {
-		fmt.Println(isopath, " already exists, moving on")
-	}
-}
-
-func isoDownload(filepath string, url string) error {
+func ubuntuCloudImageDownload(path string, url string) error {
 	fmt.Println("*** DOWNLOADING ISO ***")
 	// Get the iso
 	resp, err := http.Get(url)
@@ -94,7 +61,7 @@ func isoDownload(filepath string, url string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	out, err := os.Create(filepath)
+	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -104,7 +71,35 @@ func isoDownload(filepath string, url string) error {
 	return err
 }
 
-func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string, metadata string, userdata string) {
+func ubuntuFocalImageInit() {
+	dirstr := ubuntuImgDirStr()
+	baseimgdir := dirstr + "/" + "base-images"
+	if _, err := os.Stat(baseimgdir); os.IsNotExist(err) {
+		err := os.MkdirAll(baseimgdir, 0750)
+		if err != nil && !os.IsExist(err) {
+			log.Print(err)
+		} else {
+			fmt.Println("Created ", baseimgdir)
+		}
+	} else {
+		fmt.Println(baseimgdir, " already exists, moving on")
+	}
+	//TODO use cloud image path
+	path := baseimgdir + "/" + "flox-qemu-ubuntu.iso"
+	fileUrl := "https://flox-qemuiso.s3.amazonaws.com/flox-qemu-ubuntu.iso"
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := ubuntuCloudImageDownload(path, fileUrl)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Downloaded: " + fileUrl)
+	} else {
+		fmt.Println(path, " already exists, moving on")
+	}
+}
+
+func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string, metadata string, userdata string, ubuntu_img_url string) {
 	home, _ := os.UserHomeDir()
 	t := time.Now()
 	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
@@ -112,7 +107,7 @@ func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string, 
 		t.Hour(), t.Minute(), t.Second())
 	//TODO get rid of iso and instead create dirs for base image, and snapshots
 	imgdirstr := ubuntuImgDirStr()
-	//isodir := ubuntuIsoDirStr()
+	//baseimgdir := ubuntuIsoDirStr()
 	imgdir := home + "/" + imgdirstr
 	if _, err := os.Stat(imgdir); os.IsNotExist(err) {
 		err := os.MkdirAll(imgdir, 0750)
@@ -125,9 +120,9 @@ func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string, 
 		fmt.Println(imgdir, " already exists, moving on")
 	}
 	id := uuid.New()
-	isodir := ""
+	baseimgdir := ""
 	imgfullpath := imgdir + "/" + timeFormatted + id.String() + "-flox-qemu-BASE-ubuntu.img.qcow2"
-	isofullpath := home + "/" + isodir + "/" + "flox-qemu-ubuntu.iso"
+	isofullpath := home + "/" + baseimgdir + "/" + "flox-qemu-ubuntu.iso"
 	//TODO programmatically recognize iso name or create command flag
 	fmt.Println("*** Creating Ubuntu Focal qcow2 with .flox-qemu.yaml ubuntu-hd-size setting ***")
 	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsize)
@@ -163,4 +158,5 @@ func init() {
 	initImageCmd.Flags().String("hd-size", "20G", "The size of the hard drive for virtual machine")
 	initImageCmd.Flags().String("metadata-file", "", "The path to the metadata.yml file for use by cloud-init")
 	initImageCmd.Flags().String("user-data-file", "", "The path to the user-dta.yml file for use by cloud-init")
+	initImageCmd.Flags().String("ubuntu-img-url", "", "The direct URL to source the ubuntu cloud image")
 }

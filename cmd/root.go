@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -16,8 +17,8 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "flox-qemu",
-	Short: "a local integration testing framework for flox",
-	Long:  `This tool can download prepared virtual machine iso, generate and manage testing images, run integration tests or manual QA testing on qemu/kvm virtual machines`,
+	Short: "A linux qemu/kvm management tool for flox",
+	Long:  `This tool can configure and manage qemu/kvm images for testing or general use with flox`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -32,9 +33,27 @@ func Execute() {
 	}
 }
 
+func intializeDirectory() {
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+	dotdir := home + "/" + ".flox-qemu"
+
+	if _, err := os.Stat(dotdir); os.IsNotExist(err) {
+		err := os.MkdirAll(dotdir, 0750)
+		if err != nil && !os.IsExist(err) {
+			log.Print(err)
+		} else {
+			fmt.Println("Created ", dotdir)
+		}
+	} else {
+		fmt.Println(dotdir, " already exists, moving on")
+	}
+
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
-
+	cobra.OnInitialize(intializeDirectory)
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -69,12 +88,10 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	} else {
-		//ubuntu-images-dir: .flox-qemu/ubuntu-images
-		//ubuntu-iso-dir: .flox-qemu/ubuntu-iso
 
-		viper.Set("ubuntu-images-dir", ".flox-qemu/ubuntu-images")
-		viper.Set("ubuntu-iso-dir", ".flox-qemu/ubuntu-iso")
 		home, err := os.UserHomeDir()
+		viper.Set("ubuntu-base-images-dir", home+"/.flox-qemu/ubuntu-base-images")
+		viper.Set("ubuntu-snapshot-images-dir", home+"/.flox-qemu/ubuntu-snapshot-images")
 		cobra.CheckErr(err)
 		cnfpath := home + "/" + ".flox-qemu.yaml"
 		viper.SafeWriteConfigAs(cnfpath)

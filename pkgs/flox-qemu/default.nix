@@ -1,12 +1,15 @@
 {
   self,
-  buildGoModule,
+  buildGo118Module,
   lib,
+  pkgs, 
+  ...
 }:
-buildGoModule {
+buildGo118Module {
   pname = "flox-qemu";
   version = "0.0.0";
   src = self; # + "/src";
+  propagatedBuildInputs = [ pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils ]; 
   # vendorSha256 should be set to null if dependencies are vendored. If the dependencies aren't
   # vendored, vendorSha256 must be set to a hash of the content of all dependencies. This hash can
   # be found by setting

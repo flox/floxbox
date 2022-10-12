@@ -6,7 +6,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"os/exec"
 
@@ -15,37 +14,36 @@ import (
 )
 
 // imagesListCmd represents the imagesList command
-var imagesListCmd = &cobra.Command{
-	Use:   "images-list",
-	Short: "list images and snapshots based on disto type",
-	Long:  `This command will list all the images for the distro you specify.`,
+var baseImagesListCmd = &cobra.Command{
+	Use:   "base-images-list",
+	Short: "list base images based on disto type",
+	Long:  `This command will list all the base  images for the distro you specify.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		distro, _ := cmd.Flags().GetString("distro")
 		if distro == "ubuntu-focal" {
-			ubuntuFocalImagesList()
+			ubuntuFocalBaseImagesList()
 		} else {
 			fmt.Println(distro, " distro is not supported")
 		}
 	},
 }
 
-func ubuntuImgFullPathStr() string {
-	home, _ := os.UserHomeDir()
-	imgcfgdir := viper.Get("ubuntu-images-dir")
+func ubuntuBaseImgFullPathStr() string {
+	imgcfgdir := viper.Get("ubuntu-base-images-dir")
 	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
-	imgfullpathstr := home + "/" + imgdirstr
-	return imgfullpathstr
+	return imgdirstr
 }
 
-func ubuntuFocalImagesList() {
-	path := ubuntuImgFullPathStr()
-	cmd := exec.Command("ls", "-lah", path)
+func ubuntuFocalBaseImagesList() {
+	//path := ubuntuBaseImgFullPathStr()
+	//cmd := exec.Command("ls", "-lah", path)
+	cmd := exec.Command("which", "qemu-img")
 	output, _ := cmd.CombinedOutput()
 	fmt.Println(string(output))
 }
 
 func init() {
-	rootCmd.AddCommand(imagesListCmd)
+	rootCmd.AddCommand(baseImagesListCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -56,5 +54,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// imagesListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	imagesListCmd.Flags().String("distro", "ubuntu-focal", "Desired distro type to list images for. Currently supported distros include: ubuntu-focal")
+	baseImagesListCmd.Flags().String("distro", "ubuntu-focal", "Desired distro type to list images for. Currently supported distros include: ubuntu-focal")
 }
