@@ -8,7 +8,7 @@
   ...
 }:
 buildGo118Module rec {
-  pname = "flox-qemu";
+  pname = "floxbox";
   version = "0.0.0";
   src = self; # + "/src";
   nativeBuildInputs = [makeWrapper pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils];
@@ -21,7 +21,7 @@ buildGo118Module rec {
   # added here.
   vendorSha256 = "sha256-/n9+acNntoOpzNwWT2ow77SLzRJMGnwyiqzh2t/48gY=";
   postFixup = ''
-    wrapProgram $out/bin/flox-qemu $wrapperfile --prefix PATH : ${lib.makeBinPath [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils]}
+    wrapProgram $out/bin/floxbox $wrapperfile --prefix PATH : ${lib.makeBinPath [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils]}
   '';
   shellHook = ''
     unset GOFLAGS

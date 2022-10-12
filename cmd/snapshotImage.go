@@ -19,7 +19,7 @@ import (
 var snapshotImageCmd = &cobra.Command{
 	Use:   "snapshot-image",
 	Short: "Createa SNAPSHOT of a BASE image",
-	Long:  `Run flox-qemu list-images --distro=ubunt-focal to list images. Grab the BASE image name you want to snapshot from the list, and run this command to create a snapshot.`,
+	Long:  `Run floxbox list-images --distro=ubunt-focal to list images. Grab the BASE image name you want to snapshot from the list, and run this command to create a snapshot.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("snapshot-image called")
 		distro, _ := cmd.Flags().GetString("distro")
@@ -49,7 +49,7 @@ func ubuntuSnapshotImage(baseimagename string, snapshotname string) {
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 	basefullpath := home + "/" + imgdir + "/" + baseimagename
-	snapshotfullpath := home + "/" + imgdir + "/" + timeFormatted + "flox-qemu-SNAPSHOT-ubuntu.img.qcow2-" + snapshotname
+	snapshotfullpath := home + "/" + imgdir + "/" + timeFormatted + "floxbox-SNAPSHOT-ubuntu.img.qcow2-" + snapshotname
 	fmt.Println("*** Creating SNAPSHOT " + snapshotfullpath + " of " + baseimagename + " ***")
 	snapshotcreatecmd := exec.Command("qemu-img", "create", "-b", basefullpath, "-f", "qcow2", "-F", "qcow2", snapshotfullpath)
 	err := snapshotcreatecmd.Run()
@@ -74,6 +74,6 @@ func init() {
 	// is called directly, e.g.:
 	// snapshotImageCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	snapshotImageCmd.Flags().String("distro", "ubuntu-focal", "Desired distro to snapshot. Currently supported distros include: ubuntu-focal")
-	snapshotImageCmd.Flags().String("base-image-name", "", "Grab your desired BASE image name from flox-qemu list-images and put it here")
+	snapshotImageCmd.Flags().String("base-image-name", "", "Grab your desired BASE image name from floxbox list-images and put it here")
 	snapshotImageCmd.Flags().String("snapshot-name", id.String(), "Create a unique name for your SNAPSHOT image. Otherwise will default to a UUID if no value is given")
 }

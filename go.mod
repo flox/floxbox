@@ -1,4 +1,4 @@
-module github.com/flox/flox-qemu
+module github.com/flox/floxbox
 
 go 1.18
 

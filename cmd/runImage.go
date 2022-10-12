@@ -72,6 +72,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// runImageCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	runImageCmd.Flags().String("image-name", "", "Desired image to run. you must include the full name of the image as retrived from flox-qemu images-list")
+	runImageCmd.Flags().String("image-name", "", "Desired image to run. you must include the full name of the image as retrived from floxbox images-list")
 	runImageCmd.Flags().String("memory", "1G", "Sets guest startup RAM. Supports M for megabytes, or G for Gigabytes, ex. 12G")
 }

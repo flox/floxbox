@@ -16,7 +16,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "flox-qemu",
+	Use:   "floxbox",
 	Short: "A linux qemu/kvm management tool for flox",
 	Long:  `This tool can configure and manage qemu/kvm images for testing or general use with flox`,
 	// Uncomment the following line if your bare application
@@ -36,7 +36,7 @@ func Execute() {
 func intializeDirectory() {
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
-	dotdir := home + "/" + ".flox-qemu"
+	dotdir := home + "/" + ".floxbox"
 
 	if _, err := os.Stat(dotdir); os.IsNotExist(err) {
 		err := os.MkdirAll(dotdir, 0750)
@@ -58,7 +58,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.flox-qemu.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.floxbox.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -76,10 +76,10 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".flox-qemu" (without extension).
+		// Search config in home directory with name ".floxbox" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".flox-qemu")
+		viper.SetConfigName(".floxbox")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
@@ -90,10 +90,10 @@ func initConfig() {
 	} else {
 
 		home, err := os.UserHomeDir()
-		viper.Set("ubuntu-base-images-dir", home+"/.flox-qemu/ubuntu-base-images")
-		viper.Set("ubuntu-snapshot-images-dir", home+"/.flox-qemu/ubuntu-snapshot-images")
+		viper.Set("ubuntu-base-images-dir", home+"/.floxbox/ubuntu-base-images")
+		viper.Set("ubuntu-snapshot-images-dir", home+"/.floxbox/ubuntu-snapshot-images")
 		cobra.CheckErr(err)
-		cnfpath := home + "/" + ".flox-qemu.yaml"
+		cnfpath := home + "/" + ".floxbox.yaml"
 		viper.SafeWriteConfigAs(cnfpath)
 	}
 }
