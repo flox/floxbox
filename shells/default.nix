@@ -1,5 +1,5 @@
-{ stdenv, qemu ... }:
+{ mkShell, qemu, qemu-utils, ... }:
 
-stdenv.mkDerivation {
+mkShell {
   buildInputs = [ qemu qemu-utils ];
 }
