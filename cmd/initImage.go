@@ -8,11 +8,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
-	"os/exec"
-	"time"
+	"strings"
 
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,118 +26,83 @@ var initImageCmd = &cobra.Command{
 	Next, it will kick off a base qcow2 image creation,
 	which in turn can be used by the snapshot-image command.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		distro, _ := cmd.Flags().GetString("distro")
+		dirstro, _ := cmd.Flags().GetString("dirstro")
 		memory, _ := cmd.Flags().GetString("memory")
 		cores, _ := cmd.Flags().GetString("cores")
 		hdsize, _ := cmd.Flags().GetString("hd-size")
 		metadata, _ := cmd.Flags().GetString("metadata-file")
 		userdata, _ := cmd.Flags().GetString("user-data-file")
 		ubuntu_img_url, _ := cmd.Flags().GetString("ubuntu-img-url")
-		if distro == "ubuntu-focal" {
+		if dirstro == "ubuntu-focal" {
 			ubuntuFocalInit(memory, cores, hdsize, metadata, userdata, ubuntu_img_url)
 		} else {
-			fmt.Println(distro, " distro is not supported")
+			fmt.Println(dirstro, " dirstro is not supported")
 		}
 	},
 }
 
 func ubuntuFocalInit(memory string, cores string, hdsize string, metadata string, userdata string, ubuntu_img_url string) {
 	//ubuntuFocalIsoInit()
-	ubuntuFocalImgCreateAndInstall(memory, cores, hdsize, metadata, userdata, ubuntu_img_url)
+	//ubuntuCloudImageDownload(ubuntu_img_url)
+	ubuntuImgCreateAndInstall(memory, cores, hdsize, metadata, userdata, ubuntu_img_url)
 }
 
-func ubuntuImgDirStr() string {
-	imgcfgdir := viper.Get("ubuntu-images-dir")
+func ubuntuBaseImgDirStr() string {
+	imgcfgdir := viper.Get("ubuntu-base-images-dir")
 	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
 	return imgdirstr
 }
 
-func ubuntuCloudImageDownload(path string, url string) error {
-	fmt.Println("*** DOWNLOADING ISO ***")
-	// Get the iso
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
+func ubuntuImgCreateAndInstall(memory string, cores string, hdsize string, metadata string, userdata string, ubuntu_img_url string) {
+	fmt.Println("*** DOWNLOADING: " + ubuntu_img_url + " ***")
+
+	// Get the cloud image
+	dirstr := ubuntuBaseImgDirStr()
+	if _, err := os.Stat(dirstr); os.IsNotExist(err) {
+		err := os.MkdirAll(dirstr, 0750)
+		if err != nil && !os.IsExist(err) {
+			log.Print(err)
+		} else {
+			fmt.Println("Created ", dirstr)
+		}
+	} else {
+		fmt.Println(dirstr, " already exists, moving on")
 	}
-	defer resp.Body.Close()
-	out, err := os.Create(path)
+	os.Chdir(dirstr)
+	parsed_url, err := url.Parse(ubuntu_img_url)
 	if err != nil {
-		return err
+		panic(err)
+	}
+	resp, err := http.Get(ubuntu_img_url)
+	if err != nil {
+		panic(err)
+	}
+	path := parsed_url.Path
+	segments := strings.Split(path, "/")
+	fileName := segments[len(segments)-1]
+	defer resp.Body.Close()
+
+	out, err := os.Create(fileName)
+	if err != nil {
+		panic(err)
 	}
 	defer out.Close()
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-func ubuntuFocalImageInit() {
-	dirstr := ubuntuImgDirStr()
-	baseimgdir := dirstr + "/" + "base-images"
-	if _, err := os.Stat(baseimgdir); os.IsNotExist(err) {
-		err := os.MkdirAll(baseimgdir, 0750)
-		if err != nil && !os.IsExist(err) {
-			log.Print(err)
-		} else {
-			fmt.Println("Created ", baseimgdir)
-		}
-	} else {
-		fmt.Println(baseimgdir, " already exists, moving on")
-	}
-	//TODO use cloud image path
-	path := baseimgdir + "/" + "flox-qemu-ubuntu.iso"
-	fileUrl := "https://flox-qemuiso.s3.amazonaws.com/flox-qemu-ubuntu.iso"
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := ubuntuCloudImageDownload(path, fileUrl)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Downloaded: " + fileUrl)
-	} else {
-		fmt.Println(path, " already exists, moving on")
-	}
-}
-
-func ubuntuFocalImgCreateAndInstall(memory string, cores string, hdsize string, metadata string, userdata string, ubuntu_img_url string) {
-	home, _ := os.UserHomeDir()
-	t := time.Now()
-	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
-	//TODO get rid of iso and instead create dirs for base image, and snapshots
-	imgdirstr := ubuntuImgDirStr()
-	//baseimgdir := ubuntuIsoDirStr()
-	imgdir := home + "/" + imgdirstr
-	if _, err := os.Stat(imgdir); os.IsNotExist(err) {
-		err := os.MkdirAll(imgdir, 0750)
-		if err != nil && !os.IsExist(err) {
-			log.Print(err)
-		} else {
-			fmt.Println("Created ", imgdir)
-		}
-	} else {
-		fmt.Println(imgdir, " already exists, moving on")
-	}
-	id := uuid.New()
-	baseimgdir := ""
-	imgfullpath := imgdir + "/" + timeFormatted + id.String() + "-flox-qemu-BASE-ubuntu.img.qcow2"
-	isofullpath := home + "/" + baseimgdir + "/" + "flox-qemu-ubuntu.iso"
-	//TODO programmatically recognize iso name or create command flag
-	fmt.Println("*** Creating Ubuntu Focal qcow2 with .flox-qemu.yaml ubuntu-hd-size setting ***")
-	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsize)
-	err := imgcreatecmd.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(imgfullpath, " successfully created ....")
-	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run flox-qemu init-image again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: flox-qemu password: flox-qemu enter poweroff to complete this step. Now, you can run test images-list --distro=ubuntu-focal, and then run flox-qemu snapshot-image --distro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
-
-	imginstallcmd := exec.Command("qemu-system-x86_64", "-cdrom", isofullpath, "-drive", "file="+imgfullpath+",format=qcow2", "-enable-kvm", "-m", memory, "-smp", cores)
-	fmt.Println("Installing with ", imginstallcmd)
-	installerr := imginstallcmd.Run()
-	if installerr != nil {
-		log.Fatal(installerr)
-	}
+	//	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsize)
+	//	err := imgcreatecmd.Run()
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	fmt.Println(imgfullpath, " successfully created ....")
+	//	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run flox-qemu init-image again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: flox-qemu password: flox-qemu enter poweroff to complete this step. Now, you can run test images-list --dirstro=ubuntu-focal, and then run flox-qemu snapshot-image --dirstro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
+	//
+	//	imginstallcmd := exec.Command("qemu-system-x86_64", "-cdrom", isofullpath, "-drive", "file="+imgfullpath+",format=qcow2", "-enable-kvm", "-m", memory, "-smp", cores)
+	//	fmt.Println("Installing with ", imginstallcmd)
+	//	installerr := imginstallcmd.Run()
+	//	if installerr != nil {
+	//		log.Fatal(installerr)
+	//	}
 }
 
 func init() {
@@ -152,7 +116,7 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	initImageCmd.Flags().String("distro", "ubuntu-focal", "Desired distro to init. Currently supported distros include: ubuntu-focal")
+	initImageCmd.Flags().String("dirstro", "ubuntu-focal", "Desired dirstro to init. Currently supported dirstros include: ubuntu-focal")
 	initImageCmd.Flags().String("memory", "10G", "The amount of memory you want to assign to the machine you are creating")
 	initImageCmd.Flags().String("cores", "2", "The number of host machine cores you want to dedicate to this machine")
 	initImageCmd.Flags().String("hd-size", "20G", "The size of the hard drive for virtual machine")

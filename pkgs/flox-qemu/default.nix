@@ -11,8 +11,8 @@ buildGo118Module rec {
   pname = "flox-qemu";
   version = "0.0.0";
   src = self; # + "/src";
-  nativeBuildInputs = [makeWrapper];
-  buildInputs = [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils];
+  nativeBuildInputs = [makeWrapper pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils];
+  buildInputs = [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils];
   # vendorSha256 should be set to null if dependencies are vendored. If the dependencies aren't
   # vendored, vendorSha256 must be set to a hash of the content of all dependencies. This hash can
   # be found by setting
@@ -21,6 +21,9 @@ buildGo118Module rec {
   # added here.
   vendorSha256 = "sha256-/n9+acNntoOpzNwWT2ow77SLzRJMGnwyiqzh2t/48gY=";
   postFixup = ''
-    wrapProgram $out/bin/flox-qemu $wrapperfile --prefix PATH : ${lib.makeBinPath [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils]}
+    wrapProgram $out/bin/flox-qemu $wrapperfile --prefix PATH : ${lib.makeBinPath [pkgs.qemu pkgs.qemu-utils pkgs.cloud-utils pkgs.coreutils]}
   '';
+  shellHook = ''
+    unset GOFLAGS
+    '';
 }

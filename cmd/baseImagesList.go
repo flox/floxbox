@@ -35,9 +35,8 @@ func ubuntuBaseImgFullPathStr() string {
 }
 
 func ubuntuFocalBaseImagesList() {
-	//path := ubuntuBaseImgFullPathStr()
-	//cmd := exec.Command("ls", "-lah", path)
-	cmd := exec.Command("which", "qemu-img")
+	path := ubuntuBaseImgFullPathStr()
+	cmd := exec.Command("ls", "-lah", path)
 	output, _ := cmd.CombinedOutput()
 	fmt.Println(string(output))
 }

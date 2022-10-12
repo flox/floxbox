@@ -43,7 +43,7 @@ func ubuntuSnapshotImgDirStr() string {
 
 func ubuntuSnapshotImage(baseimagename string, snapshotname string) {
 	home, _ := os.UserHomeDir()
-	imgdir := ubuntuImgDirStr()
+	imgdir := ubuntuSnapshotImgDirStr()
 	t := time.Now()
 	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
 		t.Year(), t.Month(), t.Day(),
