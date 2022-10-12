@@ -1,6 +1,6 @@
-# Under construction
+# floxbox
 
-`floxbox` is under construction.
+`floxbox` is a box for your flox, that'll knock off your socks. You put flox into the box, and you've got a floxbox. 
 
 
 # Deprecated
