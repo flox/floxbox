@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -26,7 +27,7 @@ var initImageCmd = &cobra.Command{
 	Next, it will kick off a base qcow2 image creation,
 	which in turn can be used by the snapshot-image command.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dirstro, _ := cmd.Flags().GetString("dirstro")
+		dirstro, _ := cmd.Flags().GetString("distro")
 		memory, _ := cmd.Flags().GetString("memory")
 		cores, _ := cmd.Flags().GetString("cores")
 		hdsize, _ := cmd.Flags().GetString("hd-size")
@@ -71,11 +72,11 @@ func ubuntuImgCreateAndInstall(memory string, cores string, hdsize string, metad
 	os.Chdir(dirstr)
 	parsed_url, err := url.Parse(ubuntu_img_url)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	resp, err := http.Get(ubuntu_img_url)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	path := parsed_url.Path
 	segments := strings.Split(path, "/")
@@ -84,25 +85,19 @@ func ubuntuImgCreateAndInstall(memory string, cores string, hdsize string, metad
 
 	out, err := os.Create(fileName)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer out.Close()
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
-	//	imgcreatecmd := exec.Command("qemu-img", "create", "-f", "qcow2", imgfullpath, hdsize)
-	//	err := imgcreatecmd.Run()
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	fmt.Println(imgfullpath, " successfully created ....")
-	//	fmt.Println("*** Ubuntu Focal qcow2 image creation complete. Installing Ubuntu on image now. This may take several minutes. If the install process crashes, you will need to run floxbox init-image again. Once the install succeeds, you'll need to hit <enter> in the QEMU window that popped up, and login with user: floxbox password: floxbox enter poweroff to complete this step. Now, you can run test images-list --dirstro=ubuntu-focal, and then run floxbox snapshot-image --dirstro=ubuntu-focal --base-image-name=<imgname> --snapshot-name=<mysnapshotname> ... ***")
-	//
-	//	imginstallcmd := exec.Command("qemu-system-x86_64", "-cdrom", isofullpath, "-drive", "file="+imgfullpath+",format=qcow2", "-enable-kvm", "-m", memory, "-smp", cores)
-	//	fmt.Println("Installing with ", imginstallcmd)
-	//	installerr := imginstallcmd.Run()
-	//	if installerr != nil {
-	//		log.Fatal(installerr)
-	//	}
+	//TODO SHA256SUM based on https://ubuntu.com/tutorials/how-to-verify-ubuntu#6-check-the-iso
+	//create seed image
+	seedimgcreate := exec.Command("cloud-localds", "seed.img", userdata, metadata)
+	err = seedimgcreate.Run()
+	//TODO seed handling
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func init() {
@@ -116,7 +111,7 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	initImageCmd.Flags().String("dirstro", "ubuntu-focal", "Desired dirstro to init. Currently supported dirstros include: ubuntu-focal")
+	initImageCmd.Flags().String("distro", "ubuntu-focal", "Desired dirstro to init. Currently supported dirstros include: ubuntu-focal")
 	initImageCmd.Flags().String("memory", "10G", "The amount of memory you want to assign to the machine you are creating")
 	initImageCmd.Flags().String("cores", "2", "The number of host machine cores you want to dedicate to this machine")
 	initImageCmd.Flags().String("hd-size", "20G", "The size of the hard drive for virtual machine")

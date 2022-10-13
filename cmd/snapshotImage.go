@@ -36,7 +36,7 @@ var snapshotImageCmd = &cobra.Command{
 }
 
 func ubuntuSnapshotImgDirStr() string {
-	imgcfgdir := viper.Get("ubuntu-images-dir")
+	imgcfgdir := viper.Get("ubuntu-base-images-dir")
 	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
 	return imgdirstr
 }
