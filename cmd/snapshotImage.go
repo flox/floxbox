@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -35,21 +34,27 @@ var snapshotImageCmd = &cobra.Command{
 	},
 }
 
-func ubuntuSnapshotImgDirStr() string {
-	imgcfgdir := viper.Get("ubuntu-base-images-dir")
-	imgdirstr := fmt.Sprintf("%v", imgcfgdir)
-	return imgdirstr
-}
-
 func ubuntuSnapshotImage(baseimagename string, snapshotname string) {
-	home, _ := os.UserHomeDir()
-	imgdir := ubuntuSnapshotImgDirStr()
-	t := time.Now()
-	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
-	basefullpath := home + "/" + imgdir + "/" + baseimagename
-	snapshotfullpath := home + "/" + imgdir + "/" + timeFormatted + "floxbox-SNAPSHOT-ubuntu.img.qcow2-" + snapshotname
+	ssimgdir := viper.Get("ubuntu-snapshot-images-dir")
+	ssdirstr := fmt.Sprintf("%v", ssimgdir)
+	if _, err := os.Stat(ssdirstr); os.IsNotExist(err) {
+		err := os.MkdirAll(ssdirstr, 0750)
+		if err != nil && !os.IsExist(err) {
+			log.Print(err)
+		} else {
+			fmt.Println("Created ", ssdirstr)
+		}
+	} else {
+		fmt.Println(ssdirstr, " already exists, moving on")
+	}
+	//	t := time.Now()
+	//	timeFormatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d-",
+	//		t.Year(), t.Month(), t.Day(),
+	//		t.Hour(), t.Minute(), t.Second())
+	imgcfgdir := viper.Get("ubuntu-base-images-dir")
+	baseimgdirstr := fmt.Sprintf("%v", imgcfgdir)
+	basefullpath := baseimgdirstr + "/" + baseimagename
+	snapshotfullpath := ssdirstr + "/" + snapshotname
 	fmt.Println("*** Creating SNAPSHOT " + snapshotfullpath + " of " + baseimagename + " ***")
 	snapshotcreatecmd := exec.Command("qemu-img", "create", "-b", basefullpath, "-f", "qcow2", "-F", "qcow2", snapshotfullpath)
 	err := snapshotcreatecmd.Run()
