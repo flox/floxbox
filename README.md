@@ -3,7 +3,6 @@
 `floxbox` is a box for your flox, that'll knock off your socks. You put flox into the box, and you've got a floxbox. 
 
 
-# Deprecated
 
 ## Currently only supported running on Linux host machines with nix installed. Currently only supports `ubuntu-focal` vm. More VM's to come!
 ## Bootstrapping sequence
